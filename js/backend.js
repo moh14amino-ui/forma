@@ -4,10 +4,11 @@
    Google Apps Script Web App URL (ends in /exec). The script lives in
    google-apps-script.gs — paste it into your Sheet, deploy, then paste the URL.
 */
+const ADMIN_SHEET_TOKEN = (typeof window !== "undefined" && window.ADMIN_SHEET_TOKEN) ? window.ADMIN_SHEET_TOKEN : "";
 const BACKEND = {
   SHEET_ENABLED: true,
   SHEET_ENDPOINT: "https://script.google.com/macros/s/AKfycbynOXk9lUPDfyh4CiuLrHKZVIEp1ZOk2y5uNuO2oyUYByUnDUp72qUnBZWy3R121s86Bw/exec",
-  SHEET_TOKEN: "forma-admin-2026",   // must match SCRIPT_TOKEN in the Apps Script
+  SHEET_TOKEN: "",   // admin token is injected only on admin.html (see below)
   LOCAL_ORDERS: "/api/orders",
   LOCAL_PRODUCTS: "/api/products"
 };
@@ -47,7 +48,7 @@ async function backendSaveProducts(products) {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ action: "saveProducts", token: BACKEND.SHEET_TOKEN, products })
+        body: JSON.stringify({ action: "saveProducts", token: ADMIN_SHEET_TOKEN, products })
       });
     } catch (e) { console.warn("Sheet saveProducts failed", e); }
   }
@@ -134,7 +135,7 @@ async function updateOrder(orderId, patch) {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify(Object.assign({ action: "updateOrder", token: BACKEND.SHEET_TOKEN, id: orderId }, patch))
+        body: JSON.stringify(Object.assign({ action: "updateOrder", token: ADMIN_SHEET_TOKEN, id: orderId }, patch))
       });
     } catch (e) { console.warn("updateOrder (sheet) failed", e); }
     return { ok: true };

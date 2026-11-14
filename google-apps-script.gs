@@ -111,20 +111,35 @@ function doPost(e) {
 
     // ---- add order (public) ----
     if (action === "addOrder" || action === "submitOrder") {
+      const products = _readProducts();
+      const pmap = {};
+      products.forEach(p => { pmap[p.id] = p; });
+      // recompute total server-side from authoritative product prices (anti-tampering)
+      let subtotal = 0;
+      const safeItems = (data.items || []).map(i => {
+        const p = pmap[i.id];
+        const price = p ? Number(p.price) : Number(i.price || 0);
+        const qty = Math.max(1, parseInt(i.qty, 10) || 1);
+        subtotal += price * qty;
+        return { id: i.id, name: p ? p.name : (i.name || "Item"), size: i.size || "", qty: qty, price: price };
+      });
+      const delivery = String(data.delivery || "");
+      const shipping = /home/i.test(delivery) ? 600 : 400;
+      const total = subtotal + shipping;
       const sh = _sheet("Orders");
-      const items = (data.items || []).map(i => `${i.name} (size ${i.size}) x${i.qty}`).join("; ");
+      const items = safeItems.map(i => `${i.name} (size ${i.size}) x${i.qty}`).join("; ");
       sh.appendRow([
         new Date(),
-        data.fullName || "",
-        data.wilaya || "",
-        data.phone || "",
-        data.delivery || "",
+        String(data.fullName || "").slice(0, 120),
+        String(data.wilaya || "").slice(0, 80),
+        String(data.phone || "").slice(0, 30),
+        delivery.slice(0, 40),
         items,
-        Number(data.total || 0),
-        data.status || "Under review",
-        !!data.stockDeducted
+        total,
+        "Under review",
+        false
       ]);
-      return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+      return ContentService.createTextOutput(JSON.stringify({ ok: true, total: total }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
