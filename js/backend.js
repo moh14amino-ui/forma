@@ -5,8 +5,8 @@
    google-apps-script.gs — paste it into your Sheet, deploy, then paste the URL.
 */
 const BACKEND = {
-  SHEET_ENABLED: false,
-  SHEET_ENDPOINT: "",
+  SHEET_ENABLED: true,
+  SHEET_ENDPOINT: "https://script.google.com/macros/s/AKfycbynOXk9lUPDfyh4CiuLrHKZVIEp1ZOk2y5uNuO2oyUYByUnDUp72qUnBZWy3R121s86Bw/exec",
   SHEET_TOKEN: "forma-admin-2026",   // must match SCRIPT_TOKEN in the Apps Script
   LOCAL_ORDERS: "/api/orders",
   LOCAL_PRODUCTS: "/api/products"
