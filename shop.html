@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — Forma</title>
+<meta name="description" content="Browse the full Forma collection. Made in natural fibers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2720%27 fill=%27%231f1a14%27/%3E%3Ctext x=%2750%27 y=%2772%27 font-size=%2760%27 text-anchor=%27middle%27 fill=%27%23f6f1e8%27 font-family=%27serif%27%3EF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css?v=25">
+</head>
+<body>
+<script>window.STORE = { whatsapp: "15551234567", email: "hello@forma.example", instagram: "https://instagram.com/" };</script>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">Forma<span class="brand-mark"></span></a>
+    <div class="nav-links">
+      <a href="shop.html" data-i18n="nav.shop">Shop</a>
+      <a href="contact.html" data-i18n="nav.contact">Contact</a>
+      <a href="cart.html" class="cart-link"><span data-i18n="nav.cart">Cart</span> <span class="cart-count zero" id="cartCount">0</span></a>
+    </div>
+    <a class="nav-cta" href="cart.html" data-i18n="nav.cart">Cart</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="shop.html" class="m-link">Shop</a>
+    <a href="contact.html" class="m-link">Contact</a>
+    <a href="cart.html" class="m-link">Cart</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <div class="container">
+      <p class="eyebrow" data-i18n="shop.eyebrow">Collection</p>
+      <h1 class="page-title" data-i18n="shop.title">The full collection.</h1>
+      <p class="page-lead" data-i18n="shop.lead">A considered collection in natural fibers. Filter by category, view details, add to cart.</p>
+    </div>
+  </div>
+  <section class="section-sm">
+    <div class="container">
+      <div class="filters" id="filters"></div>
+      <div class="grid" id="productGrid">
+        <p class="empty-state">Loading collection…</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">Forma</div>
+        <p class="footer-text" data-i18n="footer.tagline">A small atelier. Made slowly, in natural fibers.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.shop">Shop</h4>
+        <a href="shop.html" data-i18n="footer.collection">Collection</a>
+        <a href="cart.html" data-i18n="footer.cart">Cart</a>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+          <a href="contact.html" data-i18n="nav.contact">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.follow">Follow</h4>
+        <a href="#" rel="noopener" data-i18n="footer.instagram">Instagram</a>
+        <a href="#" rel="noopener" data-i18n="footer.journal">Journal</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copyright">© 2026 Forma. All rights reserved.</span>
+      <span data-i18n="footer.madeWithCare">Made with care.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/i18n.js?v=25"></script>
+<script src="js/cart.js?v=25"></script>
+<script src="js/products.js?v=25"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="js/motion.js?v=25"></script>
+<script src="js/ui.js?v=25"></script>
+<script>
+(async () => {
+  const products = await loadProducts();
+  const filters = document.getElementById("filters");
+  const grid = document.getElementById("productGrid");
+  let active = "All";
+  function refresh() {
+    renderFilters(products, filters, active, (c) => { active = c; refresh(); });
+    renderProductGrid(products, grid, active);
+  }
+  refresh();
+})();
+</script>
+</body>
+</html>
+path: /home/momino/work/shop.html

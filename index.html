@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forma — Clothes made to be worn, not shown</title>
+<meta name="description" content="A small atelier making clothes in natural fibers. Browse the collection and inquire to order.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2720%27 fill=%27%231f1a14%27/%3E%3Ctext x=%2750%27 y=%2772%27 font-size=%2760%27 text-anchor=%27middle%27 fill=%27%23f6f1e8%27 font-family=%27serif%27%3EF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css?v=25">
+</head>
+<body>
+<script>window.STORE = { whatsapp: "15551234567", email: "hello@forma.example", instagram: "https://instagram.com/" };</script>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">Forma<span class="brand-mark"></span></a>
+    <div class="nav-links">
+      <a href="shop.html" data-i18n="nav.shop">Shop</a>
+      <a href="contact.html" data-i18n="nav.contact">Contact</a>
+      <a href="cart.html" class="cart-link"><span data-i18n="nav.cart">Cart</span> <span class="cart-count zero" id="cartCount">0</span></a>
+    </div>
+    <a class="nav-cta" href="shop.html" data-i18n="nav.shopNow">Shop now</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="shop.html" class="m-link">Shop</a>
+    <a href="contact.html" class="m-link">Contact</a>
+    <a href="cart.html" class="m-link">Cart</a>
+  </div>
+</nav>
+
+<main id="top">
+  <section class="hero" id="hero">
+    <div class="hero-media">
+      <img src="img/hero.jpg" alt="Close-up of natural linen fabric" width="1600" height="1067" fetchpriority="high" decoding="async">
+      <div class="hero-scrim"></div>
+    </div>
+    <div class="container hero-content">
+      <div class="hero-grid">
+        <div class="hero-text">
+          <p class="eyebrow hero-eyebrow" data-i18n="hero.eyebrow">Collection 01 · Spring</p>
+          <h1 class="hero-title" data-i18n="hero.title">Clothes made to be worn, not shown.</h1>
+          <p class="hero-sub" data-i18n="hero.sub">Natural fibers. Made in small batches by makers we know by name.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="shop.html" data-i18n="hero.viewCollection">View collection</a>
+            <a class="btn btn-secondary" href="contact.html" data-i18n="hero.contactUs">Contact us</a>
+          </div>
+        </div>
+        <div class="hero-featured" id="heroFeatured"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="collection-head reveal">
+        <p class="eyebrow" data-i18n="featured.eyebrow">Featured</p>
+        <h2 class="collection-title" data-i18n="featured.title">Picked for the season.</h2>
+        <p class="collection-lead" data-i18n="featured.lead">A handful of pieces to start with. See the full collection in the shop.</p>
+      </div>
+      <div class="grid" id="featuredGrid"></div>
+      <div style="margin-top:32px;text-align:center;">
+        <a class="btn btn-ghost" href="shop.html"><span data-i18n="featured.seeCollection">See collection</span> →</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="stitch"></div>
+
+  <section class="section">
+    <div class="container" style="text-align:center;max-width:640px;">
+      <p class="eyebrow" data-i18n="story.eyebrow">Forma</p>
+      <h2 class="story-title" data-i18n="story.title">Made by hand, in small numbers.</h2>
+      <p class="collection-lead" style="margin:16px auto 24px;" data-i18n="story.lead">Natural fibers. Made in small batches.</p>
+      <a class="btn btn-primary" href="shop.html" data-i18n="story.shopCollection">Shop the collection</a>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">Forma</div>
+        <p class="footer-text" data-i18n="footer.tagline">A small atelier. Made slowly, in natural fibers.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.shop">Shop</h4>
+        <a href="shop.html" data-i18n="footer.collection">Collection</a>
+        <a href="cart.html" data-i18n="footer.cart">Cart</a>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+          <a href="contact.html" data-i18n="nav.contact">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.follow">Follow</h4>
+        <a href="#" rel="noopener" data-i18n="footer.instagram">Instagram</a>
+        <a href="#" rel="noopener" data-i18n="footer.journal">Journal</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copyright">© 2026 Forma. All rights reserved.</span>
+      <span data-i18n="footer.madeWithCare">Made with care.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/i18n.js?v=25"></script>
+<script src="js/cart.js?v=25"></script>
+<script src="js/products.js?v=25"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="js/motion.js?v=25"></script>
+<script src="js/ui.js?v=25"></script>
+<script>
+(async () => {
+  const products = await loadProducts();
+  // featured: 4 curated ids
+  const featured = [1, 6, 8, 16].map(id => products.find(p => p.id === id)).filter(Boolean);
+  const grid = document.getElementById("featuredGrid");
+  grid.innerHTML = featured.map(productCardHTML).join("");
+  grid.querySelectorAll(".reveal").forEach(el => window.__revealObserve && window.__revealObserve(el));
+  // hero featured
+  const p = products.find(x => x.id === 8) || products[0];
+  if (p) {
+    document.getElementById("heroFeatured").innerHTML = `
+      <img src="${esc(p.image_url)}" alt="${esc(p.name)}" width="600" height="750">
+      <div class="hero-featured-meta">
+        <span class="hero-featured-name">${esc(p.name)}</span>
+        <span class="hero-featured-price">${priceLabel(p.price)}</span>
+      </div>
+      <p class="hero-featured-tag">${esc(p.sizes.join(" · "))} · ${esc(p.category)}</p>`;
+  }
+})();
+</script>
+</body>
+</html>
