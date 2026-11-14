@@ -1,60 +1,20 @@
-const ADMIN_PW = (typeof window !== "undefined" && window.ADMIN_PASSWORD) ? String(window.ADMIN_PASSWORD) : "";
-const pwInput = document.getElementById("pwInput");
-const pwBtn = document.getElementById("pwBtn");
-const pwErr = document.getElementById("pwErr");
-
-const ADMIN_ATTEMPTS_KEY = "forma_admin_attempts_v1";
-const ADMIN_LIMIT = 2;
-const ADMIN_WINDOW_MS = 5 * 60 * 1000;
-
-function adminAttempts() {
-  try {
-    const raw = localStorage.getItem(ADMIN_ATTEMPTS_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    const now = Date.now();
-    return arr.filter(t => now - t < ADMIN_WINDOW_MS);
-  } catch (e) { return []; }
-}
-function adminRecordAttempt() {
-  const now = Date.now();
-  const arr = adminAttempts().concat([now]);
-  localStorage.setItem(ADMIN_ATTEMPTS_KEY, JSON.stringify(arr));
-  return arr;
-}
-function tryLogin() {
-  if (!window.ADMIN_CONFIG || !window.ADMIN_CONFIG.enabled) {
-    pwErr.textContent = "Admin login is disabled in this static repository. Configure a real backend before enabling the dashboard.";
-    return;
-  }
-  const attempts = adminAttempts();
-  if (attempts.length >= ADMIN_LIMIT) {
-    const retryAfter = Math.ceil((attempts[0] + ADMIN_WINDOW_MS - Date.now()) / 1000);
-    const mins = Math.ceil(retryAfter / 60);
-    pwErr.textContent = "Too many attempts. Try again in " + mins + " minute(s).";
-    return;
-  }
-  if (!ADMIN_PW) {
-    pwErr.textContent = "No admin password is configured for this deployment.";
-    return;
-  }
-  if (pwInput.value === ADMIN_PW) {
-    localStorage.removeItem(ADMIN_ATTEMPTS_KEY);
-    sessionStorage.setItem("forma_admin", "1");
-    showPanel();
-  } else {
-    adminRecordAttempt();
-    const left = ADMIN_LIMIT - adminAttempts().length;
-    pwErr.textContent = t("admin.wrongPassword") + (left > 0 ? " (" + left + " attempt(s) left)" : "");
-  }
-}
-pwBtn.addEventListener("click", tryLogin);
-pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryLogin(); });
-
-if (sessionStorage.getItem("forma_admin") === "1") showPanel();
-
-const TABS = {
-  dashboard: { title: t("admin.dashboard"), sub: t("admin.overview") },
-  products: { title: t("admin.products"), sub: t("admin.manageCollection") },
-  orders: { title: t("admin.orders"), sub: t("admin.customerOrders") }
-};
-
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin unavailable — Forma</title>
+  <link rel="stylesheet" href="css/style.css?v=27">
+</head>
+<body>
+  <main class="container" style="min-height:100vh;display:grid;place-items:center;text-align:center;padding:2rem">
+    <section>
+      <p class="eyebrow">Forma</p>
+      <h1 class="page-title">Admin access is temporarily unavailable.</h1>
+      <p class="page-lead">This static site cannot securely authenticate administrators. The dashboard is disabled until a server-side authenticated admin service is deployed.</p>
+      <a class="btn btn-primary" href="index.html">Return to the store</a>
+    </section>
+  </main>
+</body>
+</html>
