@@ -2,3 +2,6 @@ orders.json
 *.log
 test_*.js
 .DS_Store
+
+# private local-only secrets file
+dont upload it just read it
