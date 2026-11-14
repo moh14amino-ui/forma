@@ -1,10 +1,11 @@
+# Ignore local secret files and environment values.
 orders.json
 *.log
 test_*.js
 .DS_Store
-
-# private local-only secrets file
-dont upload it just read it
+.env
+.env.*
+!.env.example
 
 # Cloudflare Worker
 .wrangler/
