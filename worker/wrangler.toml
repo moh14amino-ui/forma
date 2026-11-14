@@ -1,0 +1,14 @@
+name = "forma-orders"
+main = "orders.js"
+compatibility_date = "2024-11-01"
+
+# KV namespace for IP rate limiting (create via dashboard, then paste the ID)
+[[kv_namespaces]]
+binding = "RL"
+id = "PASTE_KV_NAMESPACE_ID_HERE"
+
+[vars]
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynOXk9lUPDfyh4CiuLrHKZVIEp1ZOk2y5uNuO2oyUYByUnDUp72qUnBZWy3R121s86Bw/exec"
+# Secrets (set via `wrangler secret put`, never here):
+#   TURNSTILE_SECRET
+#   APPS_SCRIPT_SECRET

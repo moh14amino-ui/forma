@@ -5,3 +5,7 @@ test_*.js
 
 # private local-only secrets file
 dont upload it just read it
+
+# Cloudflare Worker
+.wrangler/
+.dev.vars

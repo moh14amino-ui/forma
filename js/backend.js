@@ -1,14 +1,17 @@
 /* ===== Backend config =====
    LOCAL:  uses the local python server (/api/*) — works on your PC / LAN.
-   PRODUCTION (GitHub Pages): set SHEET_ENABLED=true and SHEET_ENDPOINT to your
-   Google Apps Script Web App URL (ends in /exec). The script lives in
-   google-apps-script.gs — paste it into your Sheet, deploy, then paste the URL.
+   PRODUCTION (GitHub Pages): orders go through the Cloudflare Worker (worker/orders.js)
+   which adds Turnstile + IP rate limiting + the shared secret, then forwards to
+   the Google Apps Script Web App (/exec). Products and settings are read directly
+   from the Sheet.
 */
 const ADMIN_SHEET_TOKEN = (typeof window !== "undefined" && window.ADMIN_SHEET_TOKEN) ? window.ADMIN_SHEET_TOKEN : "";
 const BACKEND = {
   SHEET_ENABLED: true,
   SHEET_ENDPOINT: "https://script.google.com/macros/s/AKfycbynOXk9lUPDfyh4CiuLrHKZVIEp1ZOk2y5uNuO2oyUYByUnDUp72qUnBZWy3R121s86Bw/exec",
   SHEET_TOKEN: "",   // admin token is injected only on admin.html (see below)
+  // Cloudflare Worker order gateway (set after `wrangler deploy`)
+  ORDER_ENDPOINT: "https://forma-orders.PASTE_SUBDOMAIN.workers.dev",
   LOCAL_ORDERS: "/api/orders",
   LOCAL_PRODUCTS: "/api/products"
 };
@@ -16,9 +19,8 @@ window.BACKEND = BACKEND;
 
 function _isSheet() { return !!(BACKEND.SHEET_ENABLED && BACKEND.SHEET_ENDPOINT); }
 
-// ---------- helpers used by products.js and admin.html ----------
+// ---------- helpers ----------
 async function backendLoadProducts() {
-  // 1. Google Sheet
   if (_isSheet()) {
     try {
       const url = BACKEND.SHEET_ENDPOINT + "?action=products";
@@ -29,7 +31,6 @@ async function backendLoadProducts() {
       }
     } catch (e) { console.warn("Sheet loadProducts failed", e); }
   }
-  // 2. Local server
   try {
     const res = await fetch(BACKEND.LOCAL_PRODUCTS, { cache: "no-store" });
     if (res.ok) {
@@ -37,11 +38,27 @@ async function backendLoadProducts() {
       if (Array.isArray(data) && data.length) return data;
     }
   } catch (e) { /* fall back */ }
-  return null; // caller falls back to products.json / localStorage
+  return null;
+}
+
+async function backendLoadSettings() {
+  const fallback = { desk: 400, home: 600 };
+  if (_isSheet()) {
+    try {
+      const url = BACKEND.SHEET_ENDPOINT + "?action=settings";
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === "object") {
+          return { desk: Number(data.desk) || fallback.desk, home: Number(data.home) || fallback.home };
+        }
+      }
+    } catch (e) { console.warn("Sheet loadSettings failed", e); }
+  }
+  return fallback;
 }
 
 async function backendSaveProducts(products) {
-  // 1. Google Sheet
   if (_isSheet()) {
     try {
       await fetch(BACKEND.SHEET_ENDPOINT, {
@@ -52,7 +69,6 @@ async function backendSaveProducts(products) {
       });
     } catch (e) { console.warn("Sheet saveProducts failed", e); }
   }
-  // 2. Local server
   try {
     await fetch(BACKEND.LOCAL_PRODUCTS, {
       method: "PUT",
@@ -62,10 +78,23 @@ async function backendSaveProducts(products) {
   } catch (e) { /* ignore if no local server */ }
 }
 
+async function backendSaveSettings(desk, home) {
+  if (_isSheet()) {
+    try {
+      await fetch(BACKEND.SHEET_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: "saveSettings", token: ADMIN_SHEET_TOKEN, desk: desk, home: home })
+      });
+    } catch (e) { console.warn("Sheet saveSettings failed", e); }
+  }
+}
+
 async function backendLoadOrders() {
   if (_isSheet()) {
     try {
-      const url = BACKEND.SHEET_ENDPOINT + "?action=orders";
+      const url = BACKEND.SHEET_ENDPOINT + "?action=orders&token=" + encodeURIComponent(ADMIN_SHEET_TOKEN);
       const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
@@ -83,6 +112,48 @@ async function backendLoadOrders() {
   return null;
 }
 
+// Check whether this phone/fingerprint may place an order (2 per 5 min).
+async function canOrder(phone, fingerprint) {
+  if (_isSheet()) {
+    try {
+      const url = BACKEND.SHEET_ENDPOINT + "?action=canOrder&phone=" + encodeURIComponent(phone) + "&fp=" + encodeURIComponent(fingerprint);
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        return data;
+      }
+    } catch (e) { console.warn("canOrder (sheet) failed", e); }
+  }
+  // local fallback — no limit
+  return { allowed: true };
+}
+
+// Compute a lightweight device fingerprint (canvas + UA + screen + tz).
+async function getDeviceFingerprint() {
+  try {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.textBaseline = "top";
+    ctx.font = "14px Arial";
+    ctx.fillText("forma-fp", 2, 2);
+    const cdata = canvas.toDataURL();
+    const raw = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width + "x" + screen.height,
+      screen.colorDepth,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+      cdata.slice(-80)
+    ].join("||");
+    // simple hash
+    let h = 0;
+    for (let i = 0; i < raw.length; i++) { h = ((h << 5) - h + raw.charCodeAt(i)) | 0; }
+    return "fp_" + (h >>> 0).toString(16);
+  } catch (e) {
+    return "fp_unknown";
+  }
+}
+
 async function submitOrder(order) {
   order.status = order.status || "Under review";
   order.stockDeducted = !!order.stockDeducted;
@@ -93,6 +164,31 @@ async function submitOrder(order) {
     localStorage.setItem("forma_orders", JSON.stringify(list));
   } catch (e) { /* ignore */ }
 
+  // Prefer the Cloudflare Worker (Turnstile + IP rate limit + secret)
+  const workerUrl = BACKEND.ORDER_ENDPOINT;
+  if (workerUrl && !workerUrl.includes("PASTE_SUBDOMAIN")) {
+    try {
+      const res = await fetch(workerUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.assign({ action: "addOrder" }, order))
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok !== false) {
+        return { ok: true, via: "worker", message: buildOrderMessage(order), total: data.total };
+      }
+      if (data.error === "rate_limited") {
+        return { ok: false, via: "worker", rateLimited: true, retryAfter: data.retryAfter };
+      }
+      if (data.error === "turnstile_failed") {
+        return { ok: false, via: "worker", error: "Security check failed. Please refresh and try again." };
+      }
+    } catch (e) {
+      console.warn("Worker submit failed, falling back.", e);
+    }
+  }
+
+  // Fallback: direct to Sheet (no Turnstile, phone rate limit applies server-side)
   if (_isSheet()) {
     try {
       await fetch(BACKEND.SHEET_ENDPOINT, {

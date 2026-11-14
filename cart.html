@@ -12,7 +12,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2720%27 fill=%27%231f1a14%27/%3E%3Ctext x=%2750%27 y=%2772%27 font-size=%2760%27 text-anchor=%27middle%27 fill=%27%23f6f1e8%27 font-family=%27serif%27%3EF%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/style.css?v=26">
+<link rel="stylesheet" href="css/style.css?v=27">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 <script>window.STORE = { whatsapp: "15551234567", email: "hello@forma.example", instagram: "https://instagram.com/" };</script>
@@ -77,6 +78,7 @@
               </label>
             </div>
           </div>
+          <div class="cf-turnstile" data-sitekey="PASTE_TURNSTILE_SITE_KEY" data-theme="light" style="margin:8px 0;"></div>
           <button type="submit" class="btn btn-primary" style="justify-content:center;" data-i18n="cart.placeOrder">Place order</button>
           <p class="form-note" id="checkoutMsg"></p>
         </form>
@@ -114,17 +116,18 @@
   </div>
 </footer>
 
-<script src="js/i18n.js?v=26"></script>
-<script src="js/cart.js?v=26"></script>
-<script src="js/products.js?v=26"></script>
+<script src="js/i18n.js?v=27"></script>
+<script src="js/cart.js?v=27"></script>
+<script src="js/products.js?v=27"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-<script src="js/motion.js?v=26"></script>
-<script src="js/ui.js?v=26"></script>
-<script src="js/backend.js?v=26"></script>
-<script src="js/wilayas.js?v=26"></script>
+<script src="js/motion.js?v=27"></script>
+<script src="js/ui.js?v=27"></script>
+<script src="js/backend.js?v=27"></script>
+<script src="js/wilayas.js?v=27"></script>
 <script>
 (async () => {
+  await loadShippingFees();
   const products = await loadProducts();
 
   // populate wilaya select
@@ -159,6 +162,17 @@
       return;
     }
 
+    // Rate limit check (2 orders / 5 min per phone+device)
+    try {
+      const fp = await getDeviceFingerprint();
+      const cr = await canOrder(phone, fp);
+      if (cr && cr.allowed === false) {
+        const mins = Math.ceil((cr.retryAfter || 300) / 60);
+        document.getElementById("checkoutMsg").textContent = "Too many orders. Please try again in " + mins + " minute(s).";
+        return;
+      }
+    } catch (e) { /* allow if check fails */ }
+
     const map = new Map(products.map(p => [p.id, p]));
     const items = cart.map(i => {
       const p = map.get(i.id);
@@ -166,7 +180,9 @@
     });
     const fee = shippingFeeFor(delivery);
     const total = cartTotal(products) + fee;
-    const order = { fullName, wilaya, phone, delivery, items, total, shippingFee: fee };
+    const fp = await getDeviceFingerprint();
+    const tsToken = (typeof turnstile !== "undefined" && turnstile.getResponse) ? (turnstile.getResponse() || "") : "";
+    const order = { fullName, wilaya, phone, delivery, items, total, shippingFee: fee, fingerprint: fp, turnstileToken: tsToken };
 
     document.getElementById("checkoutMsg").textContent = t("cart.sending");
     let res;
@@ -175,6 +191,15 @@
     } catch (err) {
       console.error(err);
       res = { ok: false, error: String(err) };
+    }
+    if (res && res.rateLimited) {
+      const mins = Math.ceil((res.retryAfter || 300) / 60);
+      document.getElementById("checkoutMsg").textContent = "Too many orders. Please try again in " + mins + " minute(s).";
+      return;
+    }
+    if (res && res.error) {
+      document.getElementById("checkoutMsg").textContent = res.error;
+      return;
     }
     if (res && res.ok) {
       const msgEl = document.getElementById("checkoutMsg");

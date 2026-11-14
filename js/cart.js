@@ -36,7 +36,7 @@ function removeFromCart(productId, size) {
 }
 function clearCart() { localStorage.removeItem(CART_KEY); saveCart([]); }
 
-// ---------- shipping fees (editable by admin, stored in localStorage) ----------
+// ---------- shipping fees (editable by admin, stored in the Sheet) ----------
 const SHIPPING_KEY = "forma_shipping_v1";
 const SHIPPING_DEFAULTS = { desk: 400, home: 600 };
 function getShippingFees() {
@@ -56,6 +56,15 @@ function shippingFeeFor(delivery) {
   const f = getShippingFees();
   if (/home/i.test(delivery)) return f.home;
   return f.desk;
+}
+// Load fees from the Sheet (source of truth); fall back to localStorage.
+async function loadShippingFees() {
+  try {
+    if (typeof backendLoadSettings === "function") {
+      const s = await backendLoadSettings();
+      if (s) { setShippingFees(s.desk, s.home); window.dispatchEvent(new CustomEvent("shipping:changed")); }
+    }
+  } catch (e) { /* keep cached */ }
 }
 function cartCount() { return getCart().reduce((s, i) => s + i.qty, 0); }
 function cartTotal(products) {
