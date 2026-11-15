@@ -1,5 +1,4 @@
 // Cloudflare Worker — order gateway. Secrets must be configured with Wrangler:
-// wrangler secret put TURNSTILE_SECRET
 // wrangler secret put APPS_SCRIPT_SECRET
 // APPS_SCRIPT_URL is configured in wrangler.toml; RL is a KV binding.
 const LIMIT = 2;
@@ -21,16 +20,7 @@ function jsonResp(obj, status) {
     headers: Object.assign({ "Content-Type": "application/json", "Cache-Control": "no-store" }, corsHeaders())
   });
 }
-async function verifyTurnstile(secret, token, ip) {
-  if (!secret || !token) return false;
-  try {
-    const body = new URLSearchParams({ secret, response: token });
-    if (ip) body.append("remoteip", ip);
-    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body });
-    const data = await res.json();
-    return !!data.success && data.hostname === "moh14amino-ui.github.io";
-  } catch (e) { return false; }
-}
+// Turnstile removed — IP rate limit and phone+fingerprint limit still protect against abuse.
 async function checkIpRateLimit(kv, ip) {
   if (!kv || !ip) return { allowed: false };
   const key = "ip:" + ip;
@@ -55,7 +45,7 @@ export default {
     }
     if (origin !== ALLOWED_ORIGIN) return jsonResp({ ok: false, error: "origin_not_allowed" }, 403);
     if (request.method !== "POST") return jsonResp({ ok: false, error: "method_not_allowed" }, 405);
-    if (!env.TURNSTILE_SECRET || !env.APPS_SCRIPT_SECRET || !env.APPS_SCRIPT_URL || !env.RL) {
+    if (!env.APPS_SCRIPT_SECRET || !env.APPS_SCRIPT_URL || !env.RL) {
       return jsonResp({ ok: false, error: "service_not_configured" }, 503);
     }
     const contentLength = Number(request.headers.get("Content-Length") || 0);
@@ -64,9 +54,6 @@ export default {
     try { payload = await request.json(); } catch (e) { return jsonResp({ ok: false, error: "bad_json" }, 400); }
     if (!payload || payload.action !== "addOrder") return jsonResp({ ok: false, error: "unsupported_action" }, 400);
     const ip = request.headers.get("CF-Connecting-IP") || "";
-    if (!await verifyTurnstile(env.TURNSTILE_SECRET, payload.turnstileToken, ip)) {
-      return jsonResp({ ok: false, error: "turnstile_failed" }, 403);
-    }
     let rl;
     try { rl = await checkIpRateLimit(env.RL, ip); } catch (e) { return jsonResp({ ok: false, error: "rate_limit_unavailable" }, 503); }
     if (!rl.allowed) return jsonResp({ ok: false, error: "rate_limited", retryAfter: rl.retryAfter }, 429);

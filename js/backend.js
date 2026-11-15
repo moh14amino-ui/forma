@@ -71,9 +71,7 @@ async function submitOrder(order) {
   if (!workerUrl || workerUrl.includes("PASTE_SUBDOMAIN")) {
     return { ok: false, error: "Online ordering is not configured yet. Please contact the store directly." };
   }
-  if (!order || !order.turnstileToken) {
-    return { ok: false, error: "Please complete the security check and try again." };
-  }
+  // Turnstile removed; server-side rate limits still apply.
   try {
     const res = await fetch(workerUrl, {
       method: "POST",
