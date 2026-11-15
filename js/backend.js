@@ -4,7 +4,7 @@
  */
 const BACKEND = {
   SHEET_ENDPOINT: "https://script.google.com/macros/s/AKfycbynOXk9lUPDfyh4CiuLrHKZVIEp1ZOk2y5uNuO2oyUYByUnDUp72qUnBZWy3R121s86Bw/exec",
-  ORDER_ENDPOINT: "https://forma-orders.PASTE_SUBDOMAIN.workers.dev",
+  ORDER_ENDPOINT: "https://forma-orders.moh14amino.workers.dev",
   LOCAL_PRODUCTS: "/api/products"
 };
 if (typeof window !== "undefined") window.BACKEND = BACKEND;
