@@ -11,3 +11,5 @@ id = "86544cf8b6a54be2827ecc710184ad55"
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynOXk9lUPDfyh4CiuLrHKZVIEp1ZOk2y5uNuO2oyUYByUnDUp72qUnBZWy3R121s86Bw/exec"
 # Secrets (set via `wrangler secret put`, never here):
 #   APPS_SCRIPT_SECRET
+#   SCRIPT_TOKEN       (forma-admin-2026)
+#   ADMIN_PASSWORD     (1234)

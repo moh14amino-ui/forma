@@ -1,20 +1,401 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Admin unavailable — Forma</title>
-  <link rel="stylesheet" href="css/style.css?v=27">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin — Forma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=27">
+<style>
+  .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .admin-tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .admin-tab { padding: 8px 16px; border: none; background: none; cursor: pointer; font: inherit; color: var(--text-3); border-radius: 8px; }
+  .admin-tab.active { background: var(--surface-2); color: var(--text); font-weight: 500; }
+  .admin-section { display: none; }
+  .admin-section.active { display: block; }
+  .login-card { max-width: 400px; margin: 80px auto; padding: 40px; background: var(--surface); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); }
+  .login-card h1 { font-family: "Fraunces", Georgia, serif; font-size: 28px; margin-bottom: 8px; }
+  .login-card p { color: var(--text-3); font-size: 14px; margin-bottom: 24px; }
+  .login-card input { width: 100%; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 10px; font: inherit; background: var(--surface-2); margin-bottom: 16px; }
+  .login-err { color: var(--accent); font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+  .table-wrap { overflow-x: auto; }
+  .admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .admin-table th, .admin-table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  .admin-table th { font-weight: 500; color: var(--text-3); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .admin-table img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; }
+  .stock-ok { color: #2d6a4f; }
+  .stock-low { color: #b7791f; }
+  .stock-out { color: #9a3f2a; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--surface); border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-family: "Fraunces", Georgia, serif; font-size: 22px; margin-bottom: 16px; }
+  .modal .field { margin-bottom: 12px; }
+  .modal .field label { display: block; font-size: 13px; color: var(--text-3); margin-bottom: 4px; }
+  .modal .field input, .modal .field select, .modal .field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 8px; font: inherit; background: var(--surface-2); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; background: var(--surface); border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 14px; z-index: 200; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.err { border-left: 3px solid var(--accent); }
+</style>
 </head>
 <body>
-  <main class="container" style="min-height:100vh;display:grid;place-items:center;text-align:center;padding:2rem">
-    <section>
-      <p class="eyebrow">Forma</p>
-      <h1 class="page-title">Admin access is temporarily unavailable.</h1>
-      <p class="page-lead">This static site cannot securely authenticate administrators. The dashboard is disabled until a server-side authenticated admin service is deployed.</p>
-      <a class="btn btn-primary" href="index.html">Return to the store</a>
-    </section>
-  </main>
+<script>window.STORE = { whatsapp: "15551234567", email: "hello@forma.example", instagram: "https://instagram.com/" };</script>
+
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <h1>Admin</h1>
+    <p>Enter your password to continue.</p>
+    <input type="password" id="pwInput" placeholder="Password" autofocus>
+    <div class="login-err" id="pwErr"></div>
+    <button class="btn btn-primary" id="pwBtn" style="width:100%;justify-content:center;">Log in</button>
+  </div>
+</div>
+
+<div id="adminShell" style="display:none;">
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1 style="font-family:'Fraunces',Georgia,serif;font-size:28px;">Forma Admin</h1>
+      <button class="btn btn-secondary btn-sm" id="logoutBtn">Log out</button>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="products">Products</button>
+      <button class="admin-tab" data-tab="orders">Orders</button>
+      <button class="admin-tab" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- Products -->
+    <div id="tab-products" class="admin-section active">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <input type="text" id="prodSearch" placeholder="Search products..." style="padding:8px 12px;border:1px solid var(--border-strong);border-radius:8px;font:inherit;background:var(--surface-2);width:240px;">
+        <button class="btn btn-primary btn-sm" id="addProdBtn">+ Add product</button>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table" id="prodTable">
+          <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Sizes</th><th>Actions</th></tr></thead>
+          <tbody id="prodTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Orders -->
+    <div id="tab-orders" class="admin-section">
+      <div class="table-wrap">
+        <table class="admin-table" id="orderTable">
+          <thead><tr><th>Date</th><th>Name</th><th>Wilaya</th><th>Phone</th><th>Delivery</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody id="orderTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="tab-settings" class="admin-section">
+      <div class="admin-card" style="max-width:400px;">
+        <h2 style="font-family:'Fraunces',Georgia,serif;font-size:22px;margin-bottom:16px;">Shipping fees (DA)</h2>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Desk delivery</label>
+          <input type="number" id="shipDesk" style="width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:8px;font:inherit;background:var(--surface-2);">
+        </div>
+        <div class="field" style="margin-bottom:16px;">
+          <label>Home delivery</label>
+          <input type="number" id="shipHome" style="width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:8px;font:inherit;background:var(--surface-2);">
+        </div>
+        <button class="btn btn-primary" id="saveShipBtn">Save fees</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product modal -->
+<div class="modal-overlay" id="prodModal">
+  <div class="modal">
+    <h2 id="modalTitle">Add product</h2>
+    <input type="hidden" id="editId">
+    <div class="field"><label>Name</label><input type="text" id="mName"></div>
+    <div class="field"><label>Category</label><input type="text" id="mCat"></div>
+    <div class="field"><label>Price (DA)</label><input type="number" step="0.01" id="mPrice"></div>
+    <div class="field"><label>Stock</label><input type="number" id="mStock"></div>
+    <div class="field"><label>Sizes (comma separated)</label><input type="text" id="mSizes" placeholder="S, M, L, XL"></div>
+    <div class="field"><label>Image URL</label><input type="text" id="mImg" placeholder="img/products/21.jpg"></div>
+    <div class="field"><label>Description</label><textarea id="mDesc" rows="3"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary btn-sm" id="modalCancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="modalSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/ui.js?v=27"></script>
+<script src="js/backend.js?v=27"></script>
+<script>
+const WORKER = "https://forma-orders.moh14amino.workers.dev";
+let token = sessionStorage.getItem("forma_admin_token") || "";
+let products = [];
+let orders = [];
+
+const pwInput = document.getElementById("pwInput");
+const pwBtn = document.getElementById("pwBtn");
+const pwErr = document.getElementById("pwErr");
+
+async function api(action, body) {
+  const res = await fetch(WORKER, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify(Object.assign({ action: action }, body || {}))
+  });
+  return res.json();
+}
+
+async function tryLogin() {
+  const password = pwInput.value;
+  pwErr.textContent = "";
+  try {
+    const res = await fetch(WORKER, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "adminLogin", password: password })
+    });
+    const data = await res.json();
+    if (data.ok && data.token) {
+      token = data.token;
+      sessionStorage.setItem("forma_admin_token", token);
+      showPanel();
+    } else {
+      pwErr.textContent = "Wrong password.";
+    }
+  } catch (e) {
+    pwErr.textContent = "Connection error.";
+  }
+}
+pwBtn.addEventListener("click", tryLogin);
+pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryLogin(); });
+
+function showPanel() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("adminShell").style.display = "block";
+  initDashboard();
+  setupAutoRefresh();
+}
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await api("adminLogout");
+  token = "";
+  sessionStorage.removeItem("forma_admin_token");
+  location.reload();
+});
+
+// Tabs
+document.querySelectorAll(".admin-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".admin-section").forEach(s => s.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
+  });
+});
+
+async function initDashboard() {
+  await loadProducts();
+  await loadOrders();
+  await loadSettings();
+  renderProducts();
+  renderOrders();
+  document.getElementById("prodCount") && (document.getElementById("prodCount").textContent = products.length + " items");
+}
+
+async function loadProducts() {
+  const data = await api("adminProducts");
+  products = (data && data.products) || [];
+}
+
+async function loadOrders() {
+  const data = await api("adminOrders");
+  orders = (data && data.orders) || [];
+}
+
+async function loadSettings() {
+  const data = await api("adminSettings");
+  const s = (data && data.settings) || { desk: 400, home: 600 };
+  document.getElementById("shipDesk").value = s.desk;
+  document.getElementById("shipHome").value = s.home;
+}
+
+function renderProducts() {
+  const term = (document.getElementById("prodSearch").value || "").toLowerCase().trim();
+  const list = term ? products.filter(p => (p.name||"").toLowerCase().includes(term) || (p.category||"").toLowerCase().includes(term)) : products;
+  const tbody = document.getElementById("prodTbody");
+  tbody.innerHTML = list.map(p => {
+    const st = p.stock <= 0 ? "stock-out" : (p.stock < 10 ? "stock-low" : "stock-ok");
+    const label = p.stock <= 0 ? "Out" : (p.stock < 10 ? p.stock + " left" : "In stock");
+    return `<tr>
+      <td><img src="${esc(p.image_url)}" alt="" onerror="this.style.opacity=.3"></td>
+      <td><strong>${esc(p.name)}</strong><br><span style="font-size:11px;color:var(--text-3);">${esc(p.category)}</span></td>
+      <td>${esc(p.category)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">${Number(p.price).toFixed(2)}</td>
+      <td class="${st}">${label}</td>
+      <td style="font-size:12px;">${esc((Array.isArray(p.sizes)?p.sizes:(p.sizes||"").split(",").map(s=>s.trim())).join(" · "))}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="openEdit(${p.id})">Edit</button>
+        <button class="btn btn-secondary btn-sm" onclick="deleteProd(${p.id})" style="margin-left:4px;">Del</button>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function renderOrders() {
+  const tbody = document.getElementById("orderTbody");
+  if (!orders.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-3);">No orders yet</td></tr>'; return; }
+  const statuses = ["Under review", "Confirmed", "Shipped", "Delivered", "Cancelled"];
+  tbody.innerHTML = orders.map(o => {
+    const key = o.id != null ? o.id : o.createdAt;
+    const cur = o.status || "Under review";
+    return `<tr>
+      <td style="white-space:nowrap;font-size:13px;color:var(--text-3);">${esc((o.createdAt||"").slice(0,16).replace("T"," "))}</td>
+      <td><strong>${esc(o.fullName)}</strong></td>
+      <td>${esc(o.wilaya)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:13px;">${esc(o.phone)}</td>
+      <td><span class="badge"><span class="dot"></span>${esc(o.delivery)}</span></td>
+      <td style="max-width:260px;font-size:13px;color:var(--text-2);">${(o.items||[]).map(i=>esc(i.name)+" (x"+i.qty+")").join(", ")}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:500;">${Number(o.total||0).toFixed(2)}</td>
+      <td>
+        <select style="padding:6px 10px;font-size:12px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface-2);" onchange="changeStatus('${esc(String(key))}', this.value)">
+          ${statuses.map(s => `<option value="${esc(s)}" ${s===cur?"selected":""}>${esc(s)}</option>`).join("")}
+        </select>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+async function changeStatus(key, status) {
+  // Determine stockDeducted
+  const stockDeducted = (status === "Confirmed" || status === "Shipped" || status === "Delivered");
+  await api("adminUpdateOrder", { id: key, status: status, stockDeducted: stockDeducted });
+  await loadOrders();
+  renderOrders();
+  toast("Status updated");
+}
+
+document.getElementById("prodSearch").addEventListener("input", renderProducts);
+
+document.getElementById("addProdBtn").addEventListener("click", () => openEdit(null));
+
+function openEdit(id) {
+  document.getElementById("editId").value = id || "";
+  if (id) {
+    const p = products.find(x => x.id === id);
+    if (p) {
+      document.getElementById("modalTitle").textContent = "Edit product";
+      document.getElementById("mName").value = p.name || "";
+      document.getElementById("mCat").value = p.category || "";
+      document.getElementById("mPrice").value = p.price || "";
+      document.getElementById("mStock").value = p.stock || 0;
+      document.getElementById("mSizes").value = Array.isArray(p.sizes) ? p.sizes.join(", ") : (p.sizes || "");
+      document.getElementById("mImg").value = p.image_url || "";
+      document.getElementById("mDesc").value = p.description || "";
+    }
+  } else {
+    document.getElementById("modalTitle").textContent = "Add product";
+    document.getElementById("mName").value = "";
+    document.getElementById("mCat").value = "";
+    document.getElementById("mPrice").value = "";
+    document.getElementById("mStock").value = "0";
+    document.getElementById("mSizes").value = "";
+    document.getElementById("mImg").value = "";
+    document.getElementById("mDesc").value = "";
+  }
+  document.getElementById("prodModal").classList.add("active");
+}
+
+document.getElementById("modalCancel").addEventListener("click", () => {
+  document.getElementById("prodModal").classList.remove("active");
+});
+
+document.getElementById("modalSave").addEventListener("click", async () => {
+  const id = document.getElementById("editId").value;
+  const name = document.getElementById("mName").value.trim();
+  const cat = document.getElementById("mCat").value.trim();
+  const price = parseFloat(document.getElementById("mPrice").value);
+  const stock = parseInt(document.getElementById("mStock").value, 10) || 0;
+  const sizes = document.getElementById("mSizes").value.split(",").map(s => s.trim()).filter(Boolean);
+  const img = document.getElementById("mImg").value.trim();
+  const desc = document.getElementById("mDesc").value.trim();
+  if (!name || isNaN(price)) { toast("Name and price required.", true); return; }
+
+  let updated;
+  if (id) {
+    updated = products.map(p => p.id == id ? Object.assign({}, p, { name, category: cat, price, stock, sizes, image_url: img, description: desc }) : p);
+  } else {
+    const newId = Math.max(0, ...products.map(p => p.id || 0)) + 1;
+    updated = products.concat([{ id: newId, name, category: cat, price, stock, sizes, image_url: img, description: desc }]);
+  }
+  const res = await api("adminSaveProducts", { products: updated });
+  if (res && res.ok) {
+    products = updated;
+    renderProducts();
+    document.getElementById("prodModal").classList.remove("active");
+    toast("Saved.");
+  } else {
+    toast("Save failed.", true);
+  }
+});
+
+async function deleteProd(id) {
+  if (!confirm("Delete this product?")) return;
+  const updated = products.filter(p => p.id !== id);
+  const res = await api("adminSaveProducts", { products: updated });
+  if (res && res.ok) {
+    products = updated;
+    renderProducts();
+    toast("Deleted.");
+  } else {
+    toast("Delete failed.", true);
+  }
+}
+
+document.getElementById("saveShipBtn").addEventListener("click", async () => {
+  const desk = parseFloat(document.getElementById("shipDesk").value);
+  const home = parseFloat(document.getElementById("shipHome").value);
+  if (isNaN(desk) || isNaN(home)) { toast("Enter valid numbers.", true); return; }
+  const res = await api("adminSaveSettings", { desk: desk, home: home });
+  if (res && res.ok) toast("Fees saved.");
+  else toast("Save failed.", true);
+});
+
+let _refreshTimer = null;
+function setupAutoRefresh() {
+  if (_refreshTimer) clearInterval(_refreshTimer);
+  _refreshTimer = setInterval(async () => {
+    const prev = orders.length;
+    await loadOrders();
+    renderOrders();
+    if (orders.length !== prev) toast("New order received!");
+  }, 10000);
+}
+
+function toast(msg, err) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (err ? " err" : "");
+  setTimeout(() => t.className = "toast", 2500);
+}
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// Auto-login if token exists
+if (token) {
+  api("adminProducts").then(data => {
+    if (data && data.products) showPanel();
+    else { token = ""; sessionStorage.removeItem("forma_admin_token"); }
+  }).catch(() => { token = ""; sessionStorage.removeItem("forma_admin_token"); });
+}
+</script>
 </body>
 </html>
+WORKEREOF
+echo "done"
