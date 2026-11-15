@@ -140,7 +140,7 @@ export default {
     if (action === "adminProducts") {
       const r = await callAppsScript(env, "getProducts", {});
       // Apps Script doesn't have a getProducts action that requires token; use products endpoint
-      const res = await fetch(env.APPS_SCRIPT_URL + "?action=products", { cache: "no-store" });
+      const res = await fetch(env.APPS_SCRIPT_URL + "?action=products", {});
       const data = await res.json().catch(() => null);
       return jsonResp({ ok: true, products: Array.isArray(data) ? data : [] });
     }
@@ -164,7 +164,7 @@ export default {
     // ---- Admin: get orders ----
     if (action === "adminOrders") {
       if (!env.SCRIPT_TOKEN) return jsonResp({ ok: false, error: "script_token_not_configured" }, 503);
-      const res = await fetch(env.APPS_SCRIPT_URL + "?action=orders&token=" + encodeURIComponent(env.SCRIPT_TOKEN), { cache: "no-store" });
+      const res = await fetch(env.APPS_SCRIPT_URL + "?action=orders&token=" + encodeURIComponent(env.SCRIPT_TOKEN), {});
       const data = await res.json().catch(() => null);
       return jsonResp({ ok: true, orders: Array.isArray(data) ? data : [] });
     }
@@ -183,7 +183,7 @@ export default {
 
     // ---- Admin: get settings ----
     if (action === "adminSettings") {
-      const res = await fetch(env.APPS_SCRIPT_URL + "?action=settings", { cache: "no-store" });
+      const res = await fetch(env.APPS_SCRIPT_URL + "?action=settings", {});
       const data = await res.json().catch(() => null);
       return jsonResp({ ok: true, settings: data || { desk: 400, home: 600 } });
     }
